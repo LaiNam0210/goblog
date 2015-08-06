@@ -1,0 +1,5 @@
+pkg/
+rethinkdb_data/
+server
+src/github.com/
+src/gopkg.in/
