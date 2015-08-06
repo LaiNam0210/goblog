@@ -29,13 +29,10 @@ func main() {
 
 	go func() {
 		fmt.Printf("Api is running at port %v \n", config.API.Port)
+
 		r := mux.NewRouter()
-		api.SetupRouter(r, "/api/v0.1")
-
-		apiServer := http.NewServeMux()
-		apiServer.Handle("/", r)
-
-		http.ListenAndServe(fmt.Sprintf(":%v", config.API.Port), apiServer)
+		api.SetupRouter(r, "/api/v1")
+		http.ListenAndServe(fmt.Sprintf(":%v", config.API.Port), r)
 
 	}()
 

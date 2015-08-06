@@ -1,0 +1,22 @@
+{
+	"db": {
+		"port": 28015,
+		"address": "localhost",
+		"dbName": "go-rethink"
+	},
+
+	"frontEnd": {
+		"port": 8000,
+		"address": "localhost"
+	},
+
+	"server": {
+		"port": 8001,
+		"address": "localhost"
+	},
+
+	"api": {
+		"port": 8002,
+		"address": "localhost"
+	}
+}
