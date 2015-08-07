@@ -1,7 +1,7 @@
 {
 	"db": {
 		"port": 28015,
-		"address": "localhost",
+		"address": "localhost:28015",
 		"dbName": "go-rethink"
 	},
 

@@ -6,20 +6,26 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	// rt "gopkg.in/dancannon/gorethink.v1"
+	rt "gopkg.in/dancannon/gorethink.v1"
 
-	"atware/api"
+	"atWare/api"
 )
 
 var (
 	configPath = flag.String("configPath", "./config.json", ``)
 )
 
-type Server struct {
-}
+func connect(config *Config) *rt.Session {
+	session, err := rt.Connect(rt.ConnectOpts{
+		Address:  config.DB.Address,
+		Database: config.DB.DBName,
+	})
 
-func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	fmt.Print("aaaaaaaaa")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return session
 }
 
 func main() {
@@ -27,11 +33,15 @@ func main() {
 
 	config := parseConfig(*configPath)
 
+	dbSession := connect(config)
+
 	go func() {
 		fmt.Printf("Api is running at port %v \n", config.API.Port)
 
+		api.Session = dbSession
 		r := mux.NewRouter()
 		api.SetupRouter(r, "/api/v1")
+
 		http.ListenAndServe(fmt.Sprintf(":%v", config.API.Port), r)
 
 	}()
@@ -45,11 +55,11 @@ func main() {
 	}()
 	go func() {
 		fmt.Printf("Server is running at port %v \n", config.Server.Port)
-		// r := mux.NewRouter()
+		r := mux.NewRouter()
 
-		server := Server{}
+		// server := Server{}
 		// server.Handle("/admin", r)
-		http.ListenAndServe(fmt.Sprintf(":%v", config.Server.Port), &server)
+		http.ListenAndServe(fmt.Sprintf(":%v", config.Server.Port), r)
 	}()
 
 	ch := make(chan int)

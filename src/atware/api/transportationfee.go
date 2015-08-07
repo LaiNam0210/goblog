@@ -4,23 +4,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"gopkg.in/dancannon/gorethink.v1"
+	rt "gopkg.in/dancannon/gorethink.v1"
 )
 
 var (
-	Session *gorethink.Session
+	Session *rt.Session
 )
 
 type Record struct {
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Balance int    `json:"balance"`
-	SegNum  int    `json:"seg_num"`
-	Type    string `json:"type"`
-	JSTTime string `json:"jst_time"`
+	From    location `json:"from" gorethink:"from"`
+	To      location `json:"to" gorethink:"to"`
+	Balance int      `json:"balance" gorethink:"balance"`
+	SegNum  int      `json:"seg_num" gorethink:"seg_num"`
+	Type    string   `json:"type" gorethink:"type"`
+	Time    string   `json:"time" gorethink: "time"`
+}
+
+type location struct {
+	RWC string `json:"rail_way_code" gorethink:"rwc"`
+	SC  string `json:"station_code" gorethink:"sc"`
 }
 
 type Filter struct {
@@ -29,20 +35,24 @@ type Filter struct {
 }
 
 type Card struct {
-	Id int `json:"id"`
+	CardId     int    `json:"card_id" gorethink:"card_id"`
+	CardHolder string `json:"card_holder" gorethink:"card_holder"`
 
-	CardId     int    `json:"card_id"`
-	CardHolder string `json:"card_holder"`
-
-	Records []Record `json:"records"`
+	Records []Record `json:"records" gorethink:"records"`
 }
 
 func getCard(rw http.ResponseWriter, req *http.Request) {
-	// vars := mux.Vars(req)
-	id := mux.Vars(req)["card_id"]
-	fmt.Println(req.URL.String())
-	fmt.Println(id)
-	rw.Write([]byte("get cards"))
+	vars := mux.Vars(req)
+
+	card_id := vars["card_id"]
+
+	var newCard Card
+
+	res, _ := rt.Table("card").Get(card_id).Run(Session)
+
+	res.One(&newCard)
+	data, _ := json.Marshal(newCard)
+	rw.Write([]byte(data))
 }
 
 func updateCard(rw http.ResponseWriter, req *http.Request) {
@@ -59,7 +69,18 @@ func postCard(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	cursor, err := rt.Table("card").Insert(newCard).Run(Session)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
-	fmt.Println(string(jsonData))
+	var res interface{}
+	err = cursor.One(&res)
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
 	rw.WriteHeader(http.StatusCreated)
 }
